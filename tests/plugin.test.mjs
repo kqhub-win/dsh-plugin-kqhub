@@ -12,11 +12,15 @@ import Tools from '@deepseek-ai/dsh-tools'
 import * as nativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
 import { parse } from 'yaml'
 import * as plugin from '../lib/index.js'
+import * as guidance from '../lib/guidance.js'
 
 test('bundle activates the published entry and exports its locale metadata', async () => {
   const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url)))
   const patch = parse(await readFile(new URL(`../${manifest.dsh.bundle.patch}`, import.meta.url), 'utf8'))
-  assert.equal(patch[0].insert[0].name, manifest.name)
+  const entries = patch[0].insert
+  assert.ok(entries.some(entry => entry.id === 'kqhub' && entry.name === manifest.name))
+  assert.ok(entries.some(entry => entry.id === 'kqhub-guidance' && entry.name === `${manifest.name}/guidance`))
+  assert.equal(manifest.exports['./guidance'].default, './lib/guidance.js')
   assert.equal(manifest.engines.dsh, manifest.peerDependencies['@deepseek-ai/dsh-mcp-client'])
   for (const language of ['zh', 'en']) {
     const locale = JSON.parse(await readFile(new URL(`../locale/${language}.json`, import.meta.url)))
@@ -58,6 +62,9 @@ test('discovers, queries and unloads through the real DSH client and installed O
         result = { tools: [{ name: 'get_mcp_usage', description: '查询用量',
           inputSchema: { type: 'object', properties: {} } }] }
         break
+      case 'resources/list':
+        result = { resources: [] }
+        break
       case 'tools/call':
         result = rpc.params.arguments.fail
           ? { isError: true, content: [{ type: 'text', text: 'MCP_INSUFFICIENT_SCOPE' }] }
@@ -82,6 +89,11 @@ test('discovers, queries and unloads through the real DSH client and installed O
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(Tools)
   await ctx.plugin(nativeExecutor)
+  const guidanceFiber = await ctx.plugin(guidance)
+  const withoutConnection = await ctx.systemPrompt.assemble()
+  assert.equal(withoutConnection.tools.length, 0)
+  assert.ok(withoutConnection.sections.some(section => section.name === 'kqhub:query-guidance'),
+    'query boundaries must exist even before MCP startup')
   const fiber = await ctx.plugin(plugin, { url: `http://127.0.0.1:${server.address().port}/mcp` })
   const definition = ctx.tools.get('mcp__kqhub__get_mcp_usage')
   assert.ok(definition, 'remote tools must be registered in the DSH namespace')
@@ -99,4 +111,30 @@ test('discovers, queries and unloads through the real DSH client and installed O
   assert.equal(calls.filter(call => call.method === 'tools/call').length, 2, 'authorization must not consume query quota')
   await fiber.dispose()
   assert.equal(ctx.tools.get('mcp__kqhub__get_mcp_usage'), undefined)
+  const disconnected = await ctx.systemPrompt.assemble()
+  assert.ok(disconnected.sections.some(section => section.name === 'kqhub:query-guidance'),
+    'losing the connection must not remove the query boundaries')
+  await guidanceFiber.dispose()
+  const unloaded = await ctx.systemPrompt.assemble()
+  assert.equal(unloaded.sections.some(section => section.name === 'kqhub:query-guidance'), false)
+})
+
+test('query guidance survives a failed connection plugin and carries actionable authorization boundaries', async t => {
+  const ctx = new Context()
+  t.after(() => ctx.fiber.dispose())
+  await ctx.plugin(SystemPrompt)
+  await ctx.plugin(Tools)
+  await ctx.plugin(nativeExecutor)
+  await ctx.plugin(guidance)
+  await assert.rejects(async () => { await ctx.plugin(plugin, { url: 'http://example.com/mcp' }) }, /MCP 地址/)
+  const assembly = await ctx.systemPrompt.assemble()
+  const section = assembly.sections.find(section => section.name === 'kqhub:query-guidance')
+  assert.ok(section, 'startup failure must leave the independent guidance installed')
+  assert.equal(section.interpolate, false)
+  assert.match(section.text, /有可用工具和必要参数时直接调用/)
+  assert.match(section.text, /不得执行旧探测脚本/)
+  assert.match(section.text, /不得为查询读取或搜索配置文件/)
+  assert.match(section.text, /401.*重新授权/)
+  assert.match(section.text, /dsh plugin --profile web exec kqhub-auth/)
+  assert.match(section.text, /当前缺少所需工具时停止查询/)
 })

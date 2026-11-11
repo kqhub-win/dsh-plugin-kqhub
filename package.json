@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-kqhub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "卡丘HUB 官方 DSH 插件，支持卡拉彼丘公开战绩查询与浏览器 OAuth 授权。",
   "type": "module",
   "main": "./lib/index.js",
@@ -10,6 +10,10 @@
     ".": {
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
+    },
+    "./guidance": {
+      "types": "./lib/guidance.d.ts",
+      "default": "./lib/guidance.js"
     },
     "./package.json": "./package.json",
     "./cordis.patch.yml": "./cordis.patch.yml",
@@ -57,7 +61,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",
-    "@deepseek-ai/dsh-mcp-client": "0.2.2-rc.1"
+    "@deepseek-ai/dsh-mcp-client": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",

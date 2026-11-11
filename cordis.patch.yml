@@ -1,3 +1,5 @@
 - insert:
+    - id: kqhub-guidance
+      name: dsh-plugin-kqhub/guidance
     - id: kqhub
       name: dsh-plugin-kqhub

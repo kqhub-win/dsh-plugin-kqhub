@@ -22,10 +22,10 @@ dsh plugin --profile web exec kqhub-auth
 dsh web
 ```
 
-离线分发时，开发者运行 `npm pack` 生成 `dsh-plugin-kqhub-0.1.0.tgz`，用户安装该文件：
+离线分发时，开发者运行 `npm pack` 生成 `dsh-plugin-kqhub-0.1.1.tgz`，用户安装该文件：
 
 ```sh
-dsh plugin --profile web add ./dsh-plugin-kqhub-0.1.0.tgz
+dsh plugin --profile web add ./dsh-plugin-kqhub-0.1.1.tgz
 dsh plugin --profile web exec kqhub-auth
 dsh web
 ```
@@ -58,6 +58,8 @@ dsh web
 服务端返回 `pending` 时，按 `retry_after` 等待，再用原 `query_handle` 调用 `get_query_result`。不要重新发起原查询。已完成的结果也能在原有效期内通过句柄复用，续取不增加每日数据查询计次。额度和有效期以服务端返回为准。
 
 比分按返回的玩家视角解释，击败数与队伍回合比分分别展示。缺失数据保留缺失，不推测未返回的逐回合操作。
+
+插件会给 DSH 提供查询规则。有可用工具时直接查询；工具未就绪时提示确认插件和授权状态，授权失效时引导重新授权。查询过程不执行工作区探测脚本、不直接请求接口，也不搜索本地令牌。查询规则独立加载，MCP 连接失败时仍然保留。
 
 ## 配置
 
@@ -100,6 +102,7 @@ dsh-plugin-kqhub/
 ├── cordis.patch.yml      # 安装时插入插件
 ├── src/index.ts          # 配置校验与官方 MCP 客户端装配
 ├── src/auth.ts           # 首次浏览器授权命令
+├── src/guidance.ts       # 查询入口与授权处理规则
 ├── lib/                  # 构建产物，随发布包交付
 ├── locale/               # DSH 插件名称和介绍
 └── tests/                # 配置、协议和生命周期验证
