@@ -1,0 +1,7 @@
+node_modules/
+lib/
+*.tgz
+.dsh/
+.mcp-auth/
+coverage/
+.local/
