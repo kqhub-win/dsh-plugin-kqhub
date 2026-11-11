@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-kqhub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "卡丘HUB 官方 DSH 插件，支持卡拉彼丘公开战绩查询与浏览器 OAuth 授权。",
   "type": "module",
   "main": "./lib/index.js",

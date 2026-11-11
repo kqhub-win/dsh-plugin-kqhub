@@ -4,7 +4,7 @@
 
 可以直接问 DSH：
 
-> 查询玩家 3586568 的本赛季表现。
+> 查询指定玩家的本赛季表现。
 >
 > 看看我绑定的账号最近几场打得怎么样。
 >
@@ -22,10 +22,10 @@ dsh plugin --profile web exec kqhub-auth
 dsh web
 ```
 
-离线分发时，开发者运行 `npm pack` 生成 `dsh-plugin-kqhub-0.1.1.tgz`，用户安装该文件：
+离线分发时，开发者运行 `npm pack` 生成 `dsh-plugin-kqhub-0.1.2.tgz`，用户安装该文件：
 
 ```sh
-dsh plugin --profile web add ./dsh-plugin-kqhub-0.1.1.tgz
+dsh plugin --profile web add ./dsh-plugin-kqhub-0.1.2.tgz
 dsh plugin --profile web exec kqhub-auth
 dsh web
 ```
